@@ -55,7 +55,44 @@ del(tot_target)
 target[target>=0.05] = 1.
 target[target<0.05] = 0.
 
-#%% data test
+#%% data test_last_five
+
+first_tr_data = transforms.Compose([transforms.ToTensor(),
+                               transforms.Resize([512,512])]) # resized with bilinear interpolation to power of 2 for simplicity
+
+first_tr_other = transforms.Compose([transforms.ToTensor(),
+                               transforms.Resize([512,512]),
+                               transforms.Grayscale()])
+
+train_folder = '/Users/tommygiak/Desktop/retinal_vessel_segmentation/datasets/training/images_test'
+data_test = datasets.ImageFolder(root=train_folder,transform=first_tr_data)
+
+edge_folder = '/Users/tommygiak/Desktop/retinal_vessel_segmentation/datasets/training/edges_test'
+edges_test = datasets.ImageFolder(root=edge_folder,transform=first_tr_other)
+
+target_folder = '/Users/tommygiak/Desktop/retinal_vessel_segmentation/datasets/training/1st_manual_test'
+target_test = datasets.ImageFolder(root=target_folder,transform=first_tr_other)
+
+tot_data = torch.vstack((data_test[0][0],edges_test[0][0])).unsqueeze(0)
+tot_target = target_test[0][0].unsqueeze(0)
+
+for i,imag in enumerate(data_test):
+    
+    sum_layers = torch.vstack((imag[0],edges_test[i][0]))
+    tot_data = torch.vstack((tot_data,sum_layers.unsqueeze(0)))
+    tot_target = torch.vstack((tot_target,target_test[i][0].unsqueeze(0)))
+
+tot_data = tot_data[1:].to(device)
+data_test = tot_data.detach()
+del(tot_data,sum_layers,edges_test,edge_folder,target_folder,train_folder)
+
+tot_target = tot_target[1:].to(device)
+target_test = tot_target.detach()
+del(tot_target)
+target_test[target_test>=0.05] = 1.
+target_test[target_test<0.05] = 0.
+
+#%% data test_no_groung
 
 first_tr_data = transforms.Compose([transforms.ToTensor(),
                                transforms.Resize([512,512])]) # resized with bilinear interpolation to power of 2 for simplicity
@@ -67,7 +104,7 @@ first_tr_other = transforms.Compose([transforms.ToTensor(),
 test_folder = '/Users/tommygiak/Desktop/retinal_vessel_segmentation/datasets/test/images'
 test = datasets.ImageFolder(root=test_folder,transform=first_tr_data)
 
-edge_folder = '/Users/tommygiak/Desktop/retinal_vessel_segmentation/datasets/test/images'
+edge_folder = '/Users/tommygiak/Desktop/retinal_vessel_segmentation/datasets/test/edges'
 edges = datasets.ImageFolder(root=edge_folder,transform=first_tr_other)
 
 tot_test = torch.vstack((test[0][0],edges[0][0])).unsqueeze(0)
@@ -224,13 +261,13 @@ num_epochs = 5
 
 for epoch in range(num_epochs):
 
-    for i in range(8):
+    for i in range(6):
             
         model.zero_grad()
     
-        output = model(data[i:(i+1)*10])
+        output = model(data[i*10:(i+1)*10])
     
-        err = loss(output,target[i:(i+1)*10])
+        err = loss(output,target[i*10:(i+1)*10])
         err.backward()
     
         optim.step()
@@ -265,16 +302,14 @@ plot_loss(lossi)
 
 #%% sad human evaluation
 
-resize = transforms.Resize([584,565])
-
-image = torch.swapaxes(torch.swapaxes(data[0,:3],0,1),1,2)
+image = torch.swapaxes(torch.swapaxes(data_test[0,:3],0,1),1,2)
 plt.imshow(image.cpu(),cmap='gray')
 plt.show()
 
 model.eval()
 
 with torch.no_grad():
-    plt.imshow(model(data[0:1]).cpu().squeeze(), cmap='gray')
+    plt.imshow(model(data_test[0:1]).cpu().squeeze(), cmap='gray')
     plt.show()
     
 
