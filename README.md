@@ -2,9 +2,9 @@
 No seriously, readme, I'm useful :sweat_smile:
 
 ## Abstract
-This direcory contains a part a project fot the _Image procassing_ course at UNIBO, click [here](https://www.unibo.it/en/teaching/course-unit-catalogue/course-unit/2023/433620) for more info.\
+This direcory contains a part of a project for the [_Image processing_](https://www.unibo.it/en/teaching/course-unit-catalogue/course-unit/2023/433620) course at UNIBO.\
 This project consist in the segmentation of retinal's vessel taken from different patients.\
-The dataset used is _Digital Retinal Images for Vessel Extraction_ (DRIVE), available at [this folder](https://drive.grand-challenge.org/DRIVE/).\
+The dataset used is the _Digital Retinal Images for Vessel Extraction_ (DRIVE), available at [this folder](https://drive.grand-challenge.org/DRIVE/).\
 We faced this challenge with two main approaches: machine learnig (U-Net) and classical segmentation techniques (mainly with [Imagej](https://fiji.sc)). In this repo you will find only the machine learnig part of those two.\
 The machine learning model is implemented in [_pytorch_](https://pytorch.org) with the support of _torchvision_.
 
@@ -20,15 +20,15 @@ The repository contain these files/folders:
 __N.B.__ The database has 20 images for training (with associated ground truths) and 20 for test (without ground truths). To evaluate the results of our model we divided the training folder in 15 training / 5 test to have groud truths also for the test images.
 
 ## Model
-The model that we implemented is a U-Net with four encoder layers, scaled with max pooling, followed by four decoder steps with skip connection evry max pooling step.
+The model that we implemented is a U-Net with four encoding layers, scaled with max pooling, followed by four decoder steps with skip connection evry max pooling step.\
 Moreover, we decided to add a layer to the rgb channels with the edge detection grayscale image of the rgb one. Therefore, the input channels of the networks are 4 (rgb + edges) and not only 3. The reason for this choice is that this way the network should be facilitated in detecting the smaller vessels, which are also the most challenging to segment.\
 In the [_unet_for_the_win.py_](https://github.com/TommyGiak/retinal_vessel_segmentation/blob/main/unet_for_the_win.py) file there are two different networks (ligth and heavy) with the same structure but different number of parameters. The models present in the _models_ folder are all trained with the heavy network, with the support of a GPU.\
 By the way, I want to thanks [Colab](https://colab.google) for letting us use their GPU, without which the training would have been impossible for us :upside_down_face:
 
 
 ## Results
-Out performance results are shown in the [_evaluation_results.txt_](https://github.com/TommyGiak/retinal_vessel_segmentation/blob/main/evaluation_results.txt) file.\
-An example of segmented output of the network, without any thresholding is show below, in comparison with the input and ground truth.
+Our performance results are shown in the [_evaluation_results.txt_](https://github.com/TommyGiak/retinal_vessel_segmentation/blob/main/evaluation_results.txt) file.\
+An example of segmented output of the network, without any thresholding, is show below, in comparison with the input and ground truth.
 
 - input image rgb:
 <img src="./datasets/training/images_test/raw/36_training.tif" alt="inp0" width="450"/>
