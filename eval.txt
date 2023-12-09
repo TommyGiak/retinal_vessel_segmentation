@@ -1,0 +1,81 @@
+//For later convinience
+mean_sens=0
+mean_spec=0
+mean_pre=0
+mean_acc=0
+
+//loop to open all 5 control images
+for (i = 0; i < 5; i++) {
+
+title_1="result_"+i+".tiff";
+j=i+36;
+title_2=""+j+"_manual1.tif";
+
+open("/Users/tommygiak/Desktop/retinal_vessel_segmentation/datasets/results/"+title_1); //U-net result 
+run("8-bit"); //RGB to 8-bit
+run("Robust Automatic Threshold Selection", "noise=25 lambda=3 min=113"); //Binary
+title_1=getTitle();
+open("/Users/tommygiak/Desktop/retinal_vessel_segmentation/datasets/training/1st_manual_test/targets/"+title_2); //Ground truth
+
+
+//True positives
+imageCalculator("AND create", title_1, title_2);
+TP=0; 
+for(x=0;x<getWidth();++x){
+	for (y = 0; y < getHeight(); y++) {
+		if(getValue(x,y)==255){
+			TP=TP+1;}
+	}
+}
+
+//True negatives
+TN=0;
+imageCalculator("OR create", title_1, title_2);
+for(x=0;x<getWidth();++x){
+	for (y = 0; y < getHeight(); y++) {
+		if(getValue(x,y)==0){
+			TN=TN+1;}
+	}
+}
+
+//False positives
+FP=0;
+imageCalculator("Subtract create", title_1, title_2);
+for(x=0;x<getWidth();++x){
+	for (y = 0; y < getHeight(); y++) {
+		if(getValue(x,y)==255){
+			FP=FP+1;}
+	}
+}
+
+//False negatives
+FN=getWidth()*getHeight()-TP-TN-FP;
+
+//Metrics
+Sensitivity=TP/(TP+FN);
+Specificity=TN/(TN+FP);
+Precision=TP/(TP+FP);
+Accuracy=(TP+TN)/(TP+FP+TN+FN);
+
+//To compute mean
+mean_sens = mean_sens + Sensitivity/5;
+mean_spec = mean_spec + Specificity/5;
+mean_pre = mean_pre + Precision/5;
+mean_acc = mean_acc + Accuracy/5;
+
+//Print metrics for each image
+print("Sensitivity="+Sensitivity);
+print("Specificity="+Specificity);
+print("Precison="+Precision);
+print("Accuracy="+Accuracy);
+close("*");
+print("\n");
+}
+
+//Overall metrics
+print("Mean Sensitivity="+mean_sens);
+print("Mean Specificity="+mean_spec);
+print("Mean Precision="+mean_pre);
+print("Mean Accuracy="+mean_acc);
+
+

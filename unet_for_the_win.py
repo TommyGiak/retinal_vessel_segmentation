@@ -14,28 +14,33 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 
-device = 'cuda' if torch.cuda.is_available() else 'cpu'
+device = 'cuda' if torch.cuda.is_available() else 'cpu' #define computations on GPU if available
 
-torch.manual_seed(0)
+torch.manual_seed(0) # random seed for reproducibility
 
-#%% data preprocessing
 
-first_tr_data = transforms.Compose([transforms.ToTensor(),
+
+#%% data preprocessing for training
+
+# transforamtions to apply a priori to the datasets
+tr_data_rgb = transforms.Compose([transforms.ToTensor(),
                                transforms.Resize([512,512])]) # resized with bilinear interpolation to power of 2 for simplicity
 
-first_tr_other = transforms.Compose([transforms.ToTensor(),
+tr_edge_target = transforms.Compose([transforms.ToTensor(),
                                transforms.Resize([512,512]),
                                transforms.Grayscale()])
 
-train_folder = '/Users/tommygiak/Desktop/retinal_vessel_segmentation/datasets/training/images'
-data = datasets.ImageFolder(root=train_folder,transform=first_tr_data)
+train_folder = './datasets/training/images' # path where to find the rgb data (training)
+data = datasets.ImageFolder(root=train_folder,transform=tr_data_rgb)
 
-edge_folder = '/Users/tommygiak/Desktop/retinal_vessel_segmentation/datasets/training/edges'
-edges = datasets.ImageFolder(root=edge_folder,transform=first_tr_other)
+edge_folder = './datasets/training/edges' # path where to find the 'edge' data (training)
+edges = datasets.ImageFolder(root=edge_folder,transform=tr_edge_target)
 
-target_folder = '/Users/tommygiak/Desktop/retinal_vessel_segmentation/datasets/training/1st_manual'
-target = datasets.ImageFolder(root=target_folder,transform=first_tr_other)
+target_folder = './datasets/training/1st_manual' # path where to find the target data (training)
+target = datasets.ImageFolder(root=target_folder,transform=tr_edge_target)
 
+# the next part of code defines the data tensor with shape [n. images, channels, h, w]
+# where channels = 4 (rgb + edge), and (h,w) = 512 (resized images)
 tot_data = torch.vstack((data[0][0],edges[0][0])).unsqueeze(0)
 tot_target = target[0][0].unsqueeze(0)
 
@@ -45,33 +50,39 @@ for i,imag in enumerate(data):
     tot_data = torch.vstack((tot_data,sum_layers.unsqueeze(0)))
     tot_target = torch.vstack((tot_target,target[i][0].unsqueeze(0)))
 
-tot_data = tot_data[1:].to(device)
+tot_data = tot_data[1:].to(device) # important .to(device) to move the tensors on the GPU, from now you'll see different .to(device) :)
 data = tot_data.detach()
 del(tot_data,sum_layers,edges,edge_folder,target_folder,train_folder)
 
 tot_target = tot_target[1:].to(device)
 target = tot_target.detach()
 del(tot_target)
-target[target>=0.05] = 1.
-target[target<0.05] = 0.
+target[target>=0.05] = 1. # thresholds for the target (we want a tensor with only 0 or 1)
+target[target<0.05] = 0. # due to bilinear interpolation in resize same of the pixels colud be different from 0 or 1
+
+# now we have the variables 'data' and 'target' that contains all we need for the training
+
+
 
 #%% data test_last_five
+# the same code of above but this time its define the test data (last five images of trainig dataset)
+# I will not repeat the comments
 
-first_tr_data = transforms.Compose([transforms.ToTensor(),
-                               transforms.Resize([512,512])]) # resized with bilinear interpolation to power of 2 for simplicity
+tr_data_rgb = transforms.Compose([transforms.ToTensor(),
+                               transforms.Resize([512,512])])
 
-first_tr_other = transforms.Compose([transforms.ToTensor(),
+tr_edge_target = transforms.Compose([transforms.ToTensor(),
                                transforms.Resize([512,512]),
                                transforms.Grayscale()])
 
-train_folder = '/Users/tommygiak/Desktop/retinal_vessel_segmentation/datasets/training/images_test'
-data_test = datasets.ImageFolder(root=train_folder,transform=first_tr_data)
+train_folder = './datasets/training/images_test'
+data_test = datasets.ImageFolder(root=train_folder,transform=tr_data_rgb)
 
-edge_folder = '/Users/tommygiak/Desktop/retinal_vessel_segmentation/datasets/training/edges_test'
-edges_test = datasets.ImageFolder(root=edge_folder,transform=first_tr_other)
+edge_folder = './datasets/training/edges_test'
+edges_test = datasets.ImageFolder(root=edge_folder,transform=tr_edge_target)
 
-target_folder = '/Users/tommygiak/Desktop/retinal_vessel_segmentation/datasets/training/1st_manual_test'
-target_test = datasets.ImageFolder(root=target_folder,transform=first_tr_other)
+target_folder = './datasets/training/1st_manual_test'
+target_test = datasets.ImageFolder(root=target_folder,transform=tr_edge_target)
 
 tot_data = torch.vstack((data_test[0][0],edges_test[0][0])).unsqueeze(0)
 tot_target = target_test[0][0].unsqueeze(0)
@@ -92,20 +103,24 @@ del(tot_target)
 target_test[target_test>=0.05] = 1.
 target_test[target_test<0.05] = 0.
 
+# now we have the variables 'data_test' and 'target_test' that contains all we need for the testing
+
+
 #%% data test_no_groung
+# this part is again the preprocessing of above but this time for the test dataset of the test folder WITHOUT the ground truth (no manual segmentation data) ;)
 
-first_tr_data = transforms.Compose([transforms.ToTensor(),
-                               transforms.Resize([512,512])]) # resized with bilinear interpolation to power of 2 for simplicity
+tr_data_rgb = transforms.Compose([transforms.ToTensor(),
+                               transforms.Resize([512,512])])
 
-first_tr_other = transforms.Compose([transforms.ToTensor(),
+tr_edge_target = transforms.Compose([transforms.ToTensor(),
                                transforms.Resize([512,512]),
                                transforms.Grayscale()])
 
-test_folder = '/Users/tommygiak/Desktop/retinal_vessel_segmentation/datasets/test/images'
-test = datasets.ImageFolder(root=test_folder,transform=first_tr_data)
+test_folder = './datasets/test/images'
+test = datasets.ImageFolder(root=test_folder,transform=tr_data_rgb)
 
-edge_folder = '/Users/tommygiak/Desktop/retinal_vessel_segmentation/datasets/test/edges'
-edges = datasets.ImageFolder(root=edge_folder,transform=first_tr_other)
+edge_folder = './datasets/test/edges'
+edges = datasets.ImageFolder(root=edge_folder,transform=tr_edge_target)
 
 tot_test = torch.vstack((test[0][0],edges[0][0])).unsqueeze(0)
 
@@ -118,8 +133,13 @@ tot_test = tot_test[1:].to(device)
 test = tot_test.detach()
 del(tot_test,sum_layers,edges,imag,test_folder)
 
+# now there is the variable 'test' (and no more) to see how the model perform on the test images of the dataset if someone want to 
 
-#%% u-net pesante
+
+
+#%% u-net heavy
+# I implemented two equal U-Nets, but with different number of parameters, this is the big one
+
 
 class DoubleConv(nn.Module):
     def __init__(self, in_channels, out_channels):
@@ -128,14 +148,15 @@ class DoubleConv(nn.Module):
             nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=2, dilation=2),
             nn.BatchNorm2d(out_channels),
             nn.LeakyReLU(inplace=True),
+            nn.Dropout2d(p=0.1),
             nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1),
             nn.BatchNorm2d(out_channels),
-            nn.LeakyReLU(inplace=True)
+            nn.LeakyReLU(inplace=True),
+            nn.Dropout2d(p=0.1)
         )
 
     def forward(self, x):
         return self.double_conv(x)
-
 
 
 class UNet_for_a_new_hope_hard(nn.Module):
@@ -159,29 +180,32 @@ class UNet_for_a_new_hope_hard(nn.Module):
     def forward(self, x):
         # Encoding path
         enc1 = self.encoder1(x) # size: 32 x 512 x 512
-        enc2 = self.encoder2(F.max_pool2d(enc1, 2)) # size: 63 x 256 x 256
+        enc2 = self.encoder2(F.max_pool2d(enc1, 2)) # size: 64 x 256 x 256
         enc3 = self.encoder3(F.max_pool2d(enc2, 2)) # size: 128 x 128 x 128
         enc4 = self.encoder4(F.max_pool2d(enc3, 2)) # size: 256 x 64 x 64
 
         # Decoding path with skip connections
-        dec_3 = self.decoder1(enc4) # size: 64 x 128 x 128
+        dec_3 = self.decoder1(enc4) # size: 128 x 128 x 128
         dec_3 = self.lrelu(dec_3)
-        dec_3 = torch.cat([enc3, dec_3], dim=1) # size: 128 x 128 x 128
+        dec_3 = torch.cat([enc3, dec_3], dim=1) # size: 256 x 128 x 128
 
-        dec_2 = self.decoder2(dec_3) # size: 32 x 256 x 256
+        dec_2 = self.decoder2(dec_3) # size: 64 x 256 x 256
         dec_2 = self.lrelu(dec_2)
-        dec_2 = torch.cat([enc2, dec_2], dim=1) # size: 64 x 256 x 256
+        dec_2 = torch.cat([enc2, dec_2], dim=1) # size: 128 x 256 x 256
 
-        dec_1 = self.decoder3(dec_2) # size: 16 x 512 x 512
+        dec_1 = self.decoder3(dec_2) # size: 32 x 512 x 512
         dec_1 = self.lrelu(dec_1)
-        dec_1 = torch.cat([enc1, dec_1], dim=1) # size: 32 x 512 x 512
+        dec_1 = torch.cat([enc1, dec_1], dim=1) # size: 64 x 512 x 512
 
-        final_output = self.final_conv(dec_1)
+        final_output = self.final_conv(dec_1) # size: 1 x 512 x 512
 
         return F.sigmoid(final_output)
-    
 
-#%% u-net leggera
+
+
+#%% u-net light
+# I implemented two equal U-Nets, but with different number of parameters, this is the small one
+
 
 class DoubleConv(nn.Module):
     def __init__(self, in_channels, out_channels):
@@ -190,9 +214,11 @@ class DoubleConv(nn.Module):
             nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=2, dilation=2),
             nn.BatchNorm2d(out_channels),
             nn.LeakyReLU(inplace=True),
+            nn.Dropout2d(p=0.1),
             nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1),
             nn.BatchNorm2d(out_channels),
-            nn.LeakyReLU(inplace=True)
+            nn.LeakyReLU(inplace=True),
+            nn.Dropout2d(p=0.1)
         )
 
     def forward(self, x):
@@ -220,10 +246,10 @@ class UNet_for_a_new_hope_ez(nn.Module):
 
     def forward(self, x):
         # Encoding path
-        enc1 = self.encoder1(x) # size: 32 x 512 x 512
-        enc2 = self.encoder2(F.max_pool2d(enc1, 2)) # size: 63 x 256 x 256
-        enc3 = self.encoder3(F.max_pool2d(enc2, 2)) # size: 128 x 128 x 128
-        enc4 = self.encoder4(F.max_pool2d(enc3, 2)) # size: 256 x 64 x 64
+        enc1 = self.encoder1(x) # size: 16 x 512 x 512
+        enc2 = self.encoder2(F.max_pool2d(enc1, 2)) # size: 32 x 256 x 256
+        enc3 = self.encoder3(F.max_pool2d(enc2, 2)) # size: 64 x 128 x 128
+        enc4 = self.encoder4(F.max_pool2d(enc3, 2)) # size: 128 x 64 x 64
 
         # Decoding path with skip connections
         dec_3 = self.decoder1(enc4) # size: 64 x 128 x 128
@@ -238,49 +264,75 @@ class UNet_for_a_new_hope_ez(nn.Module):
         dec_1 = self.lrelu(dec_1)
         dec_1 = torch.cat([enc1, dec_1], dim=1) # size: 32 x 512 x 512
 
-        final_output = self.final_conv(dec_1)
+        final_output = self.final_conv(dec_1) # size: 1 x 512 x 512
 
         return F.sigmoid(final_output)
     
 
+
 #%% model definition
 
-model = UNet_for_a_new_hope_ez().to(device)
+# by default the heavier model is defined
+model = UNet_for_a_new_hope_hard().to(device) # here the model is defined with random parameters and it is moved on the GPU
 
-optim = torch.optim.Adam(model.parameters(), lr=1e-3)
+optim = torch.optim.Adam(model.parameters(), lr=1e-3) # ADAM optimizer for the gradient descent
 
-loss = nn.BCELoss().to(device)
+loss = nn.BCELoss().to(device) # binary cross entropy loss for binary pixel-wise classification (vessel / not-vessel)
 lossi = []
 
+
+#%% load the beautiful model
+# if a model with the name written in the 'path_unet' variable is found, it will be loaded (in the file there are only the parameters)
+# ATTENTION: the parameters must be loaded on the right model (heavy or light) if not it will not work :(
+
+path_unet = './models/unet_1500.pt'
+
+try:
+    if torch.cuda.is_available():
+        print(model.load_state_dict(torch.load(path_unet)))
+    else:
+        print(model.load_state_dict(torch.load(path_unet, map_location=torch.device('cpu'))))
+except:
+    print('No previous model to load was found!')
+
+
 #%% training
+# beware: the training without a good GPU is extremely slow
 
 model.train()
 
-num_epochs = 5
+num_epochs = 500 # number of time the model will see the entire training data
 
-
+print('Training is starting...')
 for epoch in range(num_epochs):
-
-    for i in range(6):
-            
+    
+    # the next three lines asre used to shuffle date after each epoch
+    index = torch.randperm(data.shape[0])
+    data = data[index]
+    target = target[index] 
+    
+    for i in range(6): # the training data is divided in 6 batches
+        # some theory ;) 
         model.zero_grad()
-    
+
         output = model(data[i*10:(i+1)*10])
-    
+        
         err = loss(output,target[i*10:(i+1)*10])
         err.backward()
-    
-        optim.step()
-    
         lossi.append(err.item())
         
-    print(f'Epoch: {epoch+1}/{num_epochs}, loss: {lossi[-1]:.4f}')
+        optim.step()
+        
+    print(f'Epoch: {epoch+1}/{num_epochs}, loss: {lossi[-1]:.4f}') # print the current loss at the end of each epoch
     
+
+
 #%% plot loss
+# nothing it's just a function to plot the loss over the epochs
 
 import numpy as np
 
-def plot_loss(lossi : list, mean = 1, tit = None) -> None:
+def plot_loss(lossi : list, mean = 6, tit = None) -> None:
 
     lossi = np.array(lossi)
     y = lossi.reshape(-1,mean).mean(axis=1)
@@ -300,8 +352,11 @@ def plot_loss(lossi : list, mean = 1, tit = None) -> None:
 plot_loss(lossi)   
     
 
-#%% sad human evaluation
 
+#%% sad human evaluation
+# plot the input end output as images to see the progress
+
+# numpy and matplotlib are quite annoing and they require the images as tensors of shape [h,w,channels] so we need to swap the axes (torchvision works with [channels,h,w])
 image = torch.swapaxes(torch.swapaxes(data_test[0,:3],0,1),1,2)
 plt.imshow(image.cpu(),cmap='gray')
 plt.show()
@@ -309,35 +364,41 @@ plt.show()
 model.eval()
 
 with torch.no_grad():
-    plt.imshow(model(data_test[0:1]).cpu().squeeze(), cmap='gray')
+    plt.imshow(model(data_test[0:1]).cpu().squeeze(), cmap='gray') # no axes swap because is a graylevel image of shape [h,w] (no channels since is only one)
     plt.show()
     
 
 #%% save the wonderful model
-path_unet = '/Users/tommygiak/Desktop/retinal_vessel_segmentation/models/unet.pt'
+#ATTENTION: if you don't want to overwrite with previous models you must change the name
 
-torch.save(model.state_dict(), path_unet)
+path_unet = './models/unet.pt'
+fatal_decision = ''
 
-#%% load the awful model
-path_unet = '/Users/tommygiak/Desktop/retinal_vessel_segmentation/models/unet.pt'
+print('Do you really want to save the model? Be careful with overwritings!')
+fatal_decision = input('Type yes or no se if you want to save it or not: ')
 
-if torch.cuda.is_available():
-    model.load_state_dict(torch.load(path_unet))
+if fatal_decision == 'yes':
+    torch.save(model.state_dict(), path_unet)
+    print(f'Model saved, path: {path_unet}')
+elif fatal_decision == 'no':
+    print('The model will not be saved!')
 else:
-    model.load_state_dict(torch.load(path_unet, map_location=torch.device('cpu')))
+    print(f'Oh funny, but "{fatal_decision}" is not an accaptable answer! For revenge I will not save the model :P')
+
 
 
 #%% output test, we are gonna save this IMAGES
+# it just save the output of the model as tiff images (rgb), so a bit of postprocessing is needed
 
 model.eval()
 
 resize = transforms.Resize([584,565])
 
-path_results = '/Users/tommygiak/Desktop/retinal_vessel_segmentation/datasets/test/results/'
+path_results = './datasets/results/'
 
 with torch.no_grad():
     
-    for i, imag in enumerate(model(test)):
+    for i, imag in enumerate(model(data_test[:5])):
         
         utils.save_image(resize(imag), path_results+f'result_{i}.tiff')
     
