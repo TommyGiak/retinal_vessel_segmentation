@@ -320,14 +320,14 @@ if train == 'yes':
             
             # the next three lines asre used to shuffle date after each epoch
             index = torch.randperm(data_edges.shape[0])
-            data = data_edges[index]
+            data_edges = data_edges[index]
             target = target[index] 
             
             for i in range(6): # the training data is divided in 6 batches
                 # some theory ;) 
                 model.zero_grad()
         
-                output = model(data[i*10:(i+1)*10])
+                output = model(data_edges[i*10:(i+1)*10])
                 
                 err = loss(output,target[i*10:(i+1)*10])
                 err.backward()
@@ -342,14 +342,14 @@ if train == 'yes':
             
             # the next three lines asre used to shuffle date after each epoch
             index = torch.randperm(data_no_edges.shape[0])
-            data = data_no_edges[index]
+            data_no_edges = data_no_edges[index]
             target = target[index] 
             
             for i in range(6): # the training data is divided in 6 batches
                 # some theory ;) 
                 model.zero_grad()
         
-                output = model(data[i*10:(i+1)*10])
+                output = model(data_no_edges[i*10:(i+1)*10])
                 
                 err = loss(output,target[i*10:(i+1)*10])
                 err.backward()
