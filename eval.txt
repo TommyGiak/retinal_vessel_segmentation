@@ -1,13 +1,17 @@
+//EVALUATION MACRO
+//Compute main evalutation metrics quantities on the segmented images
+
 //For later convinience
 mean_sens=0
 mean_spec=0
 mean_pre=0
 mean_acc=0
+mean_f1=0
 
 //loop to open all 5 control images
 for (i = 0; i < 5; i++) {
 
-title_1="result_"+i+".tiff";
+title_1="result_no_edge_"+i+".tiff";
 j=i+36;
 title_2=""+j+"_manual1.tif";
 
@@ -56,20 +60,28 @@ Sensitivity=TP/(TP+FN);
 Specificity=TN/(TN+FP);
 Precision=TP/(TP+FP);
 Accuracy=(TP+TN)/(TP+FP+TN+FN);
+F1=2*TP/(2*TP+FP+FN);
+
 
 //To compute mean
 mean_sens = mean_sens + Sensitivity/5;
 mean_spec = mean_spec + Specificity/5;
 mean_pre = mean_pre + Precision/5;
 mean_acc = mean_acc + Accuracy/5;
+mean_f1 = mean_f1 + F1/5;
+
 
 //Print metrics for each image
 print("Sensitivity="+Sensitivity);
 print("Specificity="+Specificity);
 print("Precison="+Precision);
 print("Accuracy="+Accuracy);
+print("F1="+F1);
 close("*");
+
 print("\n");
+
+
 }
 
 //Overall metrics
@@ -77,5 +89,6 @@ print("Mean Sensitivity="+mean_sens);
 print("Mean Specificity="+mean_spec);
 print("Mean Precision="+mean_pre);
 print("Mean Accuracy="+mean_acc);
+print("Mean F1="+mean_f1);
 
 

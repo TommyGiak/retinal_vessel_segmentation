@@ -291,7 +291,7 @@ lossi = []
 # if a model with the name written in the 'path_unet' variable is found, it will be loaded (in the file there are only the parameters)
 # ATTENTION: the parameters must be loaded on the right model (heavy or light) if not it will not work :(
 
-path_unet = './models/unet_1500.pt'
+path_unet = './models/unet_no_edges.pt'
 
 try:
     if torch.cuda.is_available():
@@ -445,9 +445,7 @@ with torch.no_grad():
             utils.save_image(resize(imag), path_results+f'result_{i}.tiff')
     elif name == 'UNet_but_no_edges':
         for i, imag in enumerate(model(data_test_no_edges[:5])):
-            utils.save_image(resize(imag), path_results+f'result_{i}.tiff')
-
-
+            utils.save_image(resize(imag), path_results+f'result_no_edge_{i}.tiff')
 
 
 

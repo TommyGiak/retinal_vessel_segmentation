@@ -3,33 +3,39 @@ Sensitivity=0.8739
 Specificity=0.9584
 Precison=0.7195
 Accuracy=0.9492
+F1=0.7892
 
 //result_1.tif
 Sensitivity=0.89
 Specificity=0.9607
 Precison=0.6843
 Accuracy=0.9545
+F1=0.7737
 
 //result_2.tif
 Sensitivity=0.9088
 Specificity=0.9475
 Precison=0.6204
 Accuracy=0.9441
+F1=0.7374
 
 //result_3.tif
 Sensitivity=0.9237
 Specificity=0.9422
 Precison=0.6004
 Accuracy=0.9406
+F1=0.7277
 
 //result_4.tif
 Sensitivity=0.9204
 Specificity=0.9489
 Precison=0.5963
 Accuracy=0.9467
-
+F1=0.7237
+ 
 //general results
 Mean Sensitivity=0.9033
 Mean Specificity=0.9515
 Mean Precision=0.6442
 Mean Accuracy=0.9471
+Mean F1=0.7504

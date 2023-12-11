@@ -1,0 +1,41 @@
+//result_0.tif
+Sensitivity=0.88
+Specificity=0.9617
+Precison=0.7372
+Accuracy=0.9528
+F1=0.8023
+
+//result_1.tif
+Sensitivity=0.8932
+Specificity=0.9608
+Precison=0.686
+Accuracy=0.9549
+F1=0.776
+
+//result_2.tif
+Sensitivity=0.9039
+Specificity=0.9533
+Precison=0.6465
+Accuracy=0.949
+F1=0.7538
+
+//result_3.tif
+Sensitivity=0.9223
+Specificity=0.945
+Precison=0.6117
+Accuracy=0.943
+F1=0.7355
+
+//result_4.tif
+Sensitivity=0.9274
+Specificity=0.9488
+Precison=0.5978
+Accuracy=0.9472
+F1=0.727
+
+//general results
+Mean Sensitivity=0.9054
+Mean Specificity=0.9539
+Mean Precision=0.6558
+Mean Accuracy=0.9494
+Mean F1=0.7589
