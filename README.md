@@ -50,8 +50,10 @@ An example of segmented output of the network, without any thresholding, is show
 <img src="./datasets/training/images_test/raw/36_training.tif" alt="inp0" width="450"/>
 - input edges:
 <img src="./datasets/training/edges_test/data/segm_36_training.tif" alt="inp0" width="450"/>
-- output of the network trained with edges (without thresholding):
+- output of the network trained __with__ edges (without thresholding):
 <img src="./datasets/results/result_0.tiff" alt="res0" width="450"/>
+- output of the network trained __without__ edges (without thresholding):
+<img src="./datasets/results/result_no_edge_0.tiff" alt="res_no0" width="450"/>
 - ground truth:
 <img src="./datasets/training/1st_manual_test/targets/36_manual1.tif" alt="res0" width="450"/>
 
