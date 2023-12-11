@@ -51,8 +51,9 @@ for i,imag in enumerate(data):
     tot_target = torch.vstack((tot_target,target[i][0].unsqueeze(0)))
 
 tot_data = tot_data[1:].to(device) # important .to(device) to move the tensors on the GPU, from now you'll see different .to(device) :)
-data = tot_data.detach()
-del(tot_data,sum_layers,edges,edge_folder,target_folder,train_folder)
+data_edges = tot_data.detach()
+data_no_edges = data_edges[:,:3].detach()
+del(tot_data,sum_layers,edges,edge_folder,target_folder,train_folder,data)
 
 tot_target = tot_target[1:].to(device)
 target = tot_target.detach()
@@ -61,7 +62,6 @@ target[target>=0.05] = 1. # thresholds for the target (we want a tensor with onl
 target[target<0.05] = 0. # due to bilinear interpolation in resize same of the pixels colud be different from 0 or 1
 
 # now we have the variables 'data' and 'target' that contains all we need for the training
-
 
 
 #%% data test_last_five
@@ -94,8 +94,9 @@ for i,imag in enumerate(data_test):
     tot_target = torch.vstack((tot_target,target_test[i][0].unsqueeze(0)))
 
 tot_data = tot_data[1:].to(device)
-data_test = tot_data.detach()
-del(tot_data,sum_layers,edges_test,edge_folder,target_folder,train_folder)
+data_test_edges = tot_data.detach()
+data_test_no_edges = data_test_edges[:,:3].detach()
+del(tot_data,sum_layers,edges_test,edge_folder,target_folder,train_folder,data_test)
 
 tot_target = tot_target[1:].to(device)
 target_test = tot_target.detach()
@@ -130,16 +131,15 @@ for i,imag in enumerate(test):
     tot_test = torch.vstack((tot_test,sum_layers.unsqueeze(0)))
 
 tot_test = tot_test[1:].to(device)
-test = tot_test.detach()
-del(tot_test,sum_layers,edges,imag,test_folder)
+test_edges = tot_test.detach()
+test_no_edges = test_edges[:,:3].detach()
+del(tot_test,sum_layers,edges,imag,test_folder,test)
 
 # now there is the variable 'test' (and no more) to see how the model perform on the test images of the dataset if someone want to 
 
 
 
-#%% u-net heavy
-# I implemented two equal U-Nets, but with different number of parameters, this is the big one
-
+#%% u-net with edges
 
 class DoubleConv(nn.Module):
     def __init__(self, in_channels, out_channels):
@@ -203,8 +203,7 @@ class UNet_for_a_new_hope_hard(nn.Module):
 
 
 
-#%% u-net light
-# I implemented two equal U-Nets, but with different number of parameters, this is the small one
+#%% u-net without edges
 
 
 class DoubleConv(nn.Module):
@@ -225,55 +224,62 @@ class DoubleConv(nn.Module):
         return self.double_conv(x)
 
 
-
-class UNet_for_a_new_hope_ez(nn.Module):
+class UNet_but_no_edges(nn.Module):
 
     def __init__(self):
         super().__init__()
-        self.encoder1 = DoubleConv(4, 16)
-        self.encoder2 = DoubleConv(16, 32)
-        self.encoder3 = DoubleConv(32, 64)
-        self.encoder4 = DoubleConv(64, 128)
+        self.encoder1 = DoubleConv(3, 32)
+        self.encoder2 = DoubleConv(32, 64)
+        self.encoder3 = DoubleConv(64, 128)
+        self.encoder4 = DoubleConv(128, 256)
 
-        self.decoder1 = nn.ConvTranspose2d(128, 64, kernel_size=2, stride=2)
-        self.decoder2 = nn.ConvTranspose2d(128, 32, kernel_size=2, stride=2)
-        self.decoder3 = nn.ConvTranspose2d(64, 16, kernel_size=2, stride=2)
+        self.decoder1 = nn.ConvTranspose2d(256, 128, kernel_size=2, stride=2)
+        self.decoder2 = nn.ConvTranspose2d(256, 64, kernel_size=2, stride=2)
+        self.decoder3 = nn.ConvTranspose2d(128, 32, kernel_size=2, stride=2)
 
-        self.final_conv = nn.Conv2d(32, 1, kernel_size=1)
+        self.final_conv = nn.Conv2d(64, 1, kernel_size=1)
 
         self.lrelu = nn.LeakyReLU()
 
 
     def forward(self, x):
         # Encoding path
-        enc1 = self.encoder1(x) # size: 16 x 512 x 512
-        enc2 = self.encoder2(F.max_pool2d(enc1, 2)) # size: 32 x 256 x 256
-        enc3 = self.encoder3(F.max_pool2d(enc2, 2)) # size: 64 x 128 x 128
-        enc4 = self.encoder4(F.max_pool2d(enc3, 2)) # size: 128 x 64 x 64
+        enc1 = self.encoder1(x) # size: 32 x 512 x 512
+        enc2 = self.encoder2(F.max_pool2d(enc1, 2)) # size: 64 x 256 x 256
+        enc3 = self.encoder3(F.max_pool2d(enc2, 2)) # size: 128 x 128 x 128
+        enc4 = self.encoder4(F.max_pool2d(enc3, 2)) # size: 256 x 64 x 64
 
         # Decoding path with skip connections
-        dec_3 = self.decoder1(enc4) # size: 64 x 128 x 128
+        dec_3 = self.decoder1(enc4) # size: 128 x 128 x 128
         dec_3 = self.lrelu(dec_3)
-        dec_3 = torch.cat([enc3, dec_3], dim=1) # size: 128 x 128 x 128
+        dec_3 = torch.cat([enc3, dec_3], dim=1) # size: 256 x 128 x 128
 
-        dec_2 = self.decoder2(dec_3) # size: 32 x 256 x 256
+        dec_2 = self.decoder2(dec_3) # size: 64 x 256 x 256
         dec_2 = self.lrelu(dec_2)
-        dec_2 = torch.cat([enc2, dec_2], dim=1) # size: 64 x 256 x 256
+        dec_2 = torch.cat([enc2, dec_2], dim=1) # size: 128 x 256 x 256
 
-        dec_1 = self.decoder3(dec_2) # size: 16 x 512 x 512
+        dec_1 = self.decoder3(dec_2) # size: 32 x 512 x 512
         dec_1 = self.lrelu(dec_1)
-        dec_1 = torch.cat([enc1, dec_1], dim=1) # size: 32 x 512 x 512
+        dec_1 = torch.cat([enc1, dec_1], dim=1) # size: 64 x 512 x 512
 
         final_output = self.final_conv(dec_1) # size: 1 x 512 x 512
 
         return F.sigmoid(final_output)
-    
 
 
 #%% model definition
 
 # by default the heavier model is defined
-model = UNet_for_a_new_hope_hard().to(device) # here the model is defined with random parameters and it is moved on the GPU
+edges = input('If you want to evaluate/train the model WITH edges type yes, for no edges type no: ')
+if edges == 'yes':
+    model = UNet_for_a_new_hope_hard().to(device) # here the model is defined with random parameters and it is moved on the GPU
+    print('Edge model is defined')
+elif edges == 'no':
+    model = UNet_but_no_edges().to(device)
+    print('NO-edge model is defined')
+else:
+    raise Warning(f'\'{edges}\' is not a possible choice, you sinner! No model is defined :(')
+       
 
 optim = torch.optim.Adam(model.parameters(), lr=1e-3) # ADAM optimizer for the gradient descent
 
@@ -296,36 +302,63 @@ except:
     print('No previous model to load was found!')
 
 
-#%% training
+#%% training with edges
 # beware: the training without a good GPU is extremely slow
 
 model.train()
 
 num_epochs = 500 # number of time the model will see the entire training data
 
-print('Training is starting...')
-for epoch in range(num_epochs):
-    
-    # the next three lines asre used to shuffle date after each epoch
-    index = torch.randperm(data.shape[0])
-    data = data[index]
-    target = target[index] 
-    
-    for i in range(6): # the training data is divided in 6 batches
-        # some theory ;) 
-        model.zero_grad()
+train = input('If you want to start the training type yes, otherwise it will not start!')
 
-        output = model(data[i*10:(i+1)*10])
-        
-        err = loss(output,target[i*10:(i+1)*10])
-        err.backward()
-        lossi.append(err.item())
-        
-        optim.step()
-        
-    print(f'Epoch: {epoch+1}/{num_epochs}, loss: {lossi[-1]:.4f}') # print the current loss at the end of each epoch
+if train == 'yes':
+    print('Training is starting...')
+    name = model.__class__.__name__
     
-
+    if name == 'UNet_for_a_new_hope_hard':
+        for epoch in range(num_epochs):
+            
+            # the next three lines asre used to shuffle date after each epoch
+            index = torch.randperm(data_edges.shape[0])
+            data = data_edges[index]
+            target = target[index] 
+            
+            for i in range(6): # the training data is divided in 6 batches
+                # some theory ;) 
+                model.zero_grad()
+        
+                output = model(data[i*10:(i+1)*10])
+                
+                err = loss(output,target[i*10:(i+1)*10])
+                err.backward()
+                lossi.append(err.item())
+                
+                optim.step()
+                
+            print(f'Epoch: {epoch+1}/{num_epochs}, loss: {lossi[-1]:.4f}') # print the current loss at the end of each epoch
+    
+    elif name == 'UNet_but_no_edges':
+        for epoch in range(num_epochs):
+            
+            # the next three lines asre used to shuffle date after each epoch
+            index = torch.randperm(data_no_edges.shape[0])
+            data = data_no_edges[index]
+            target = target[index] 
+            
+            for i in range(6): # the training data is divided in 6 batches
+                # some theory ;) 
+                model.zero_grad()
+        
+                output = model(data[i*10:(i+1)*10])
+                
+                err = loss(output,target[i*10:(i+1)*10])
+                err.backward()
+                lossi.append(err.item())
+                
+                optim.step()
+                
+            print(f'Epoch: {epoch+1}/{num_epochs}, loss: {lossi[-1]:.4f}') # print the current loss at the end of each epoch
+    
 
 #%% plot loss
 # nothing it's just a function to plot the loss over the epochs
@@ -357,14 +390,22 @@ plot_loss(lossi)
 # plot the input end output as images to see the progress
 
 # numpy and matplotlib are quite annoing and they require the images as tensors of shape [h,w,channels] so we need to swap the axes (torchvision works with [channels,h,w])
-image = torch.swapaxes(torch.swapaxes(data_test[0,:3],0,1),1,2)
+name = model.__class__.__name__
+if name == 'UNet_for_a_new_hope_hard':
+    image = torch.swapaxes(torch.swapaxes(data_test_edges[0,:3],0,1),1,2)
+elif name == 'UNet_but_no_edges':
+    image = torch.swapaxes(torch.swapaxes(data_test_no_edges[0,:3],0,1),1,2)
+
 plt.imshow(image.cpu(),cmap='gray')
 plt.show()
 
 model.eval()
 
 with torch.no_grad():
-    plt.imshow(model(data_test[0:1]).cpu().squeeze(), cmap='gray') # no axes swap because is a graylevel image of shape [h,w] (no channels since is only one)
+    if name == 'UNet_for_a_new_hope_hard':
+        plt.imshow(model(data_test_edges[0:1]).cpu().squeeze(), cmap='gray') # no axes swap because is a graylevel image of shape [h,w] (no channels since is only one)
+    elif name == 'UNet_but_no_edges':
+        plt.imshow(model(data_test_no_edges[0:1]).cpu().squeeze(), cmap='gray')
     plt.show()
     
 
@@ -395,13 +436,16 @@ model.eval()
 resize = transforms.Resize([584,565])
 
 path_results = './datasets/results/'
+name = model.__class__.__name__
 
 with torch.no_grad():
     
-    for i, imag in enumerate(model(data_test[:5])):
-        
-        utils.save_image(resize(imag), path_results+f'result_{i}.tiff')
-    
+    if name == 'UNet_for_a_new_hope_hard':
+        for i, imag in enumerate(model(data_test_edges[:5])):
+            utils.save_image(resize(imag), path_results+f'result_{i}.tiff')
+    elif name == 'UNet_but_no_edges':
+        for i, imag in enumerate(model(data_test_no_edges[:5])):
+            utils.save_image(resize(imag), path_results+f'result_{i}.tiff')
 
 
 
