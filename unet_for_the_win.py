@@ -51,8 +51,8 @@ for i,imag in enumerate(data):
     tot_target = torch.vstack((tot_target,target[i][0].unsqueeze(0)))
 
 tot_data = tot_data[1:].to(device) # important .to(device) to move the tensors on the GPU, from now you'll see different .to(device) :)
-data_edges = tot_data.detach()
-data_no_edges = data_edges[:,:3].detach()
+data_edges = tot_data.detach() # the data is registered with and without the edge layer
+data_no_edges = data_edges[:,:3].detach() # data without the edge layer
 del(tot_data,sum_layers,edges,edge_folder,target_folder,train_folder,data)
 
 tot_target = tot_target[1:].to(device)
@@ -94,8 +94,8 @@ for i,imag in enumerate(data_test):
     tot_target = torch.vstack((tot_target,target_test[i][0].unsqueeze(0)))
 
 tot_data = tot_data[1:].to(device)
-data_test_edges = tot_data.detach()
-data_test_no_edges = data_test_edges[:,:3].detach()
+data_test_edges = tot_data.detach() # as before test data is registered with and without the edge layer
+data_test_no_edges = data_test_edges[:,:3].detach() # test data without edge layers
 del(tot_data,sum_layers,edges_test,edge_folder,target_folder,train_folder,data_test)
 
 tot_target = tot_target[1:].to(device)
@@ -131,8 +131,8 @@ for i,imag in enumerate(test):
     tot_test = torch.vstack((tot_test,sum_layers.unsqueeze(0)))
 
 tot_test = tot_test[1:].to(device)
-test_edges = tot_test.detach()
-test_no_edges = test_edges[:,:3].detach()
+test_edges = tot_test.detach() # again with edges
+test_no_edges = test_edges[:,:3].detach() # without edges
 del(tot_test,sum_layers,edges,imag,test_folder,test)
 
 # now there is the variable 'test' (and no more) to see how the model perform on the test images of the dataset if someone want to 
@@ -140,6 +140,7 @@ del(tot_test,sum_layers,edges,imag,test_folder,test)
 
 
 #%% u-net with edges
+# two U-Nets ar defined, one for the data with the edge layer and the other with only rgb channels
 
 class DoubleConv(nn.Module):
     def __init__(self, in_channels, out_channels):
@@ -204,7 +205,6 @@ class UNet_for_a_new_hope_hard(nn.Module):
 
 
 #%% u-net without edges
-
 
 class DoubleConv(nn.Module):
     def __init__(self, in_channels, out_channels):
@@ -271,10 +271,10 @@ class UNet_but_no_edges(nn.Module):
 
 # by default the heavier model is defined
 edges = input('If you want to evaluate/train the model WITH edges type yes, for no edges type no: ')
-if edges == 'yes':
+if edges == 'yes': # to define the model with the edge layers
     model = UNet_for_a_new_hope_hard().to(device) # here the model is defined with random parameters and it is moved on the GPU
     print('Edge model is defined')
-elif edges == 'no':
+elif edges == 'no': # model without the edges (only rgb)
     model = UNet_but_no_edges().to(device)
     print('NO-edge model is defined')
 else:
@@ -299,7 +299,7 @@ try:
     else:
         print(model.load_state_dict(torch.load(path_unet, map_location=torch.device('cpu'))))
 except:
-    print('No previous model to load was found!')
+    print('No previous model to load was found! The model still have random weights :(')
 
 
 #%% training with edges
@@ -311,11 +311,11 @@ num_epochs = 500 # number of time the model will see the entire training data
 
 train = input('If you want to start the training type yes, otherwise it will not start!')
 
-if train == 'yes':
+if train == 'yes': 
     print('Training is starting...')
     name = model.__class__.__name__
     
-    if name == 'UNet_for_a_new_hope_hard':
+    if name == 'UNet_for_a_new_hope_hard': # train the model with edges
         for epoch in range(num_epochs):
             
             # the next three lines asre used to shuffle date after each epoch
@@ -337,7 +337,7 @@ if train == 'yes':
                 
             print(f'Epoch: {epoch+1}/{num_epochs}, loss: {lossi[-1]:.4f}') # print the current loss at the end of each epoch
     
-    elif name == 'UNet_but_no_edges':
+    elif name == 'UNet_but_no_edges': # train the model without edges
         for epoch in range(num_epochs):
             
             # the next three lines asre used to shuffle date after each epoch
