@@ -1,7 +1,9 @@
 # README :grimacing:
+
 No seriously, readme, I'm useful :sweat_smile:
 
 ## Abstract
+
 This direcory contains a part of a project for the [_Image processing_](https://www.unibo.it/en/teaching/course-unit-catalogue/course-unit/2023/433620) course at UNIBO.\
 This project consist in the segmentation of retinal's vessel taken from different patients.\
 The dataset used is the _Digital Retinal Images for Vessel Extraction_ (DRIVE), available at [this folder](https://drive.grand-challenge.org/DRIVE/).\
@@ -11,15 +13,17 @@ The machine learning model is implemented in [_pytorch_](https://pytorch.org) wi
 ## Repository structure
 
 The repository contain these files/folders:
-- _dataset_: folder with the images of the DRIVE database with some preprocessing
+
+- _dataset_: folder with the images of the DRIVE database with some preprocessing and the outupts of the models pretrained
 - _models_: folder with pytorch pretrained models saved (actually the files contain only the parameters)
 - _eval.txt_: imagej macro to evaluate the output of the network with specificity, precision, ...
-- _evaluation_results.txt_: evalutaion of the outputs of a pretrained network with 1500 epochs
+- _evaluation_*.txt_: evalutaion of the outputs of the pretrained network with 1500 epochs, both for the model with and without edges
 - _unet_for_the_win.py_: python file where the model is implemented
 
 __N.B.__ The database has 20 images for training (with associated ground truths) and 20 for test (without ground truths). To evaluate the results of our model we divided the training folder in 15 training / 5 test to have groud truths also for the test images.
 
 ## Model
+
 The model that we implemented is a U-Net with four encoding layers, scaled with max pooling, followed by four decoder steps with skip connection evry max pooling step.\
 Moreover, we decided to add a layer to the rgb channels with the edge detection grayscale image of the rgb one. Therefore, the input channels of the networks are 4 (rgb + edges) and not only 3. The reason for this choice is that this way the network should be facilitated in detecting the smaller vessels, which are also the most challenging to segment.\
 Actually in the [_unet_for_the_win.py_](https://github.com/TommyGiak/retinal_vessel_segmentation/blob/main/unet_for_the_win.py) file there are two different networks (with/without edges) with the same structure but one model takes as input the rgb image plus the layer with the graylevel images of the detected edges (4 channels), while the other only the rgb image (3 channels). The models present in the _models_ folder are all trained with the edge layers, with the support of a GPU.\
