@@ -51,14 +51,23 @@ Our performance results are shown in the [_evaluation_results.txt_](https://gith
 An example of segmented output of the network, without any thresholding, is show below, in comparison with the input and ground truth.
 
 - input image rgb:
+
 <img src="./datasets/training/images_test/raw/36_training.tif" alt="inp0" width="450"/>
-- input edges:
+
+- input edges: 
+
 <img src="./datasets/training/edges_test/data/segm_36_training.tif" alt="inp0" width="450"/>
+
 - output of the network trained __with__ edges (without thresholding):
+
 <img src="./datasets/results/result_0.tiff" alt="res0" width="450"/>
+
 - output of the network trained __without__ edges (without thresholding):
+
 <img src="./datasets/results/result_no_edge_0.tiff" alt="res_no0" width="450"/>
+
 - ground truth:
+
 <img src="./datasets/training/1st_manual_test/targets/36_manual1.tif" alt="res0" width="450"/>
 
 That's all for now! :wave:
