@@ -47,7 +47,7 @@ __N.B.__ Remember to adjust the paths if you use an editor and be careful with t
 
 
 ## Results
-Our performance results are shown in the [_evaluation_results.txt_](https://github.com/TommyGiak/retinal_vessel_segmentation/blob/main/evaluation_results.txt) file.\
+Our performance results are shown in the [_evaluation_results.txt_](https://github.com/TommyGiak/retinal_vessel_segmentation/blob/main/evaluation_results_no_edges.txt) file.\
 An example of segmented output of the network, without any thresholding, is show below, in comparison with the input and ground truth.
 
 - input image rgb:
